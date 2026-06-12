@@ -25,14 +25,14 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ── Constants ─────────────────────────────────────────────────────────────────
+#Constants
 DATA_DIR = "data"
 MOVIELENS_URL = "https://files.grouplens.org/datasets/movielens/ml-100k.zip"
 RAW_ZIP = os.path.join(DATA_DIR, "ml-100k.zip")
 RAW_DIR = os.path.join(DATA_DIR, "ml-100k")
 
 
-# ── Step 1: Download ──────────────────────────────────────────────────────────
+#Step 1: Download
 def download_movielens():
     """Download MovieLens 100K if not already present."""
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -50,15 +50,12 @@ def download_movielens():
 
     logger.info(f"Extracted to {RAW_DIR}")
 
-
-# ── Step 2: Load ratings ──────────────────────────────────────────────────────
+#Step 2: Load ratings
 def load_ratings() -> pd.DataFrame:
     """
     Load the main ratings file.
-
     u.data format: user_id | movie_id | rating | timestamp
     Tab separated, no header.
-
     We drop timestamp — not useful for our model.
     """
     ratings_path = os.path.join(RAW_DIR, "u.data")
@@ -74,14 +71,12 @@ def load_ratings() -> pd.DataFrame:
     return df
 
 
-# ── Step 3: Load movie metadata ───────────────────────────────────────────────
+#Step 3: Load movie metadata
 def load_movies() -> pd.DataFrame:
     """
     Load movie titles and genres.
-
     u.item format: movie_id | title | release_date | ... | genre_flags (19 columns)
     Pipe separated, latin-1 encoding (has special characters).
-
     Genre columns are binary flags — 1 if movie belongs to that genre, 0 if not.
     A movie can belong to multiple genres.
     """
@@ -109,20 +104,17 @@ def load_movies() -> pd.DataFrame:
     return movies
 
 
-# ── Step 4: Create implicit feedback ─────────────────────────────────────────
+#Step 4: Create implicit feedback
 def create_implicit_feedback(df: pd.DataFrame) -> pd.DataFrame:
     """
     Convert explicit ratings (1-5 stars) to implicit feedback (liked/not liked).
-
     Why implicit?
     Real recommendation systems mostly use implicit signals — clicks, watches,
     purchases — not explicit ratings. Users rarely rate things.
-
     Our conversion rule:
     Rating >= 4 → positive interaction (user liked it) → label = 1
     Rating <= 2 → negative interaction (user disliked it) → label = 0
     Rating == 3 → neutral, drop it (ambiguous signal)
-
     This gives us cleaner training signal.
     """
     df = df.copy()
@@ -135,17 +127,15 @@ def create_implicit_feedback(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ── Step 5: Reindex user and movie IDs ───────────────────────────────────────
+#Step 5: Reindex user and movie IDs
 def reindex_ids(df: pd.DataFrame) -> tuple[pd.DataFrame, dict, dict]:
     """
     Reindex user and movie IDs to start from 0 consecutively.
-
     Why?
     The original IDs in MovieLens start from 1. Our embedding matrices
     use IDs as row indices, so they need to be 0-indexed and consecutive.
     Without this, a movie_id of 1682 would require an embedding matrix
     with 1682 rows even if we only have a few movies.
-
     Returns:
     - df with new user_idx and movie_idx columns
     - user_id_map: original_id → new_idx
@@ -165,18 +155,15 @@ def reindex_ids(df: pd.DataFrame) -> tuple[pd.DataFrame, dict, dict]:
     return df, user_id_map, movie_id_map
 
 
-# ── Step 6: Train/val/test split ──────────────────────────────────────────────
+#Step 6: Train/val/test split
 def split_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Split interactions into train (80%), validation (10%), test (10%).
-
     Important: we split per user, not randomly.
     Why? If we split randomly, the model might see a user's later interactions
     during training and predict their earlier ones — that's data leakage.
-
     Correct approach: for each user, sort interactions by time (approximated
     here by row order) and use last 20% as test/val.
-
     For simplicity with MovieLens 100K (no timestamp after dropping it),
     we do a stratified split ensuring each user appears in train.
     """
@@ -207,7 +194,7 @@ def split_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFra
     return train, val, test
 
 
-# ── Step 7: Save everything ───────────────────────────────────────────────────
+#Step 7: Save everything
 def save_processed(
         train: pd.DataFrame,
         val: pd.DataFrame,
@@ -248,7 +235,7 @@ def save_processed(
     logger.info(f"Stats: {stats}")
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+#Main
 def main():
     logger.info("=" * 50)
     logger.info("Step 1: Download MovieLens 100K")
