@@ -11,7 +11,7 @@ What FAISS does:
 For MovieLens 1682 movies, IndexFlatL2 (exact search) is fine.
 For 10M+ items (production), you'd use IndexIVFFlat (approximate).
 """
-
+#Importing the required modules
 import os
 import json
 import logging
